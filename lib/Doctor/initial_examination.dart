@@ -214,16 +214,17 @@ class _InitialExaminationState extends State<InitialExamination> with SingleTick
 
   Widget _buildTeethConditionsLegend() {
     final conditions = {
-      'سليم': Colors.white,
-      'تسوس': const Color(0xFF8B4513),
-      'التهاب': Colors.red,
-      'كسر': Colors.blueGrey,
-      'حشوة': const Color(0xFFFFD700),
-      'حشوة مؤقتة': const Color(0xFFFFFF00),
-      'سن مفقود': Colors.black,
-      'جسر': const Color(0xFFA020F0),
-      'زرع': const Color(0xFF00FF00),
-      'تلبيسة': const Color(0xFFFFA500),
+      'Mobile Tooth': const Color(0xFF1976D2),         // Blue
+      'Unrestorable Tooth': const Color(0xFFD32F2F),  // Red
+      'Supernumerary': const Color(0xFF7B1FA2),       // Purple
+      'Tender to Percussion': const Color(0xFFFFA000),// Orange
+      'Root Canal Therapy': const Color(0xFF388E3C),  // Green
+      'Over Retained': const Color(0xFF0097A7),       // Cyan
+      'Caries': const Color(0xFF795548),              // Brown
+      'Missing Tooth': const Color(0xFF616161),       // Grey
+      'Filling': const Color(0xFFFFD600),             // Yellow
+      'Crown': const Color(0xFFFF7043),               // Deep Orange
+      'Implant': const Color(0xFF43A047),             // Dark Green
     };
 
     return SingleChildScrollView(

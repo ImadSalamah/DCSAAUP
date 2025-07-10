@@ -279,6 +279,14 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
     );
   }
 
+  Future<Set<String>> _getAllowedPatientsForStudent(String studentId) async {
+    final ref = FirebaseDatabase.instance.ref('student_patients/$studentId');
+    final snapshot = await ref.get();
+    final data = snapshot.value as Map<dynamic, dynamic>?;
+    if (data == null) return {};
+    return data.keys.map((e) => e.toString()).toSet();
+  }
+
   Future<void> _loadAllExaminations() async {
     try {
       setState(() {
@@ -465,17 +473,24 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
           latestExamsByPatient[patientId] = exam;
         }
       }
-      final List<Map<String, dynamic>> deduplicatedExaminations = latestExamsByPatient.values.toList();
+      List<Map<String, dynamic>> deduplicatedExaminations = latestExamsByPatient.values.toList();
       deduplicatedExaminations.sort((a, b) {
         final aTime = a['examination']['timestamp'] ?? 0;
         final bTime = b['examination']['timestamp'] ?? 0;
         return bTime.compareTo(aTime);
       });
 
-      // debugPrint('Total examinations loaded (deduplicated): \\${deduplicatedExaminations.length}');
-      // for (var ex in deduplicatedExaminations) {
-      //   debugPrint('ExamId: \\${ex['examinationId']} - PatientId: \\${ex['patient']['id']} - Source: \\${ex['source']}');
-      // }
+      // فلترة حسب صلاحيات الطالب
+      if (_userRole == 'dental_student') {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final allowedPatients = await _getAllowedPatientsForStudent(user.uid);
+          deduplicatedExaminations = deduplicatedExaminations.where((exam) {
+            final patientId = exam['patient']?['id']?.toString();
+            return patientId != null && allowedPatients.contains(patientId);
+          }).toList();
+        }
+      }
 
       setState(() {
         _examinedPatients = deduplicatedExaminations;
@@ -789,7 +804,8 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
                     margin: const EdgeInsets.only(right: 8),
                   ),
                   Text(
-                      '${_translate(context, 'tooth')} $tooth - ${_translate(context, colorMeaning.toLowerCase())}'),
+                    '${_translate(context, 'tooth')} $tooth - ${_translate(context, colorMeaning.toLowerCase())}'
+                  ),
                 ],
               ),
             ),
@@ -803,15 +819,19 @@ class _ExaminedPatientsPageState extends State<ExaminedPatientsPage> {
 
   String _getColorMeaning(String hexColor) {
     final colorMap = {
-      'ff000000': 'caries',
-      'ffffa500': 'filled',
-      'ff8b4513': 'root_canal',
-      'fff44336': 'extraction_needed',
-      'ff607d8b': 'crown',
-      'ffffd700': 'impacted',
-      'ffffff00': 'missing',
+      'ff1976d2': 'Mobile Tooth',           // Blue
+      'ffd32f2f': 'Unrestorable Tooth',    // Red
+      'ff7b1fa2': 'Supernumerary',         // Purple
+      'ffffa000': 'Tender to Percussion',  // Orange
+      'ff388e3c': 'Root Canal Therapy',    // Green
+      'ff0097a7': 'Over Retained',         // Cyan
+      'ff795548': 'Caries',                // Brown
+      'ff616161': 'Missing Tooth',         // Grey
+      'ffffd600': 'Filling',               // Yellow
+      'ffff7043': 'Crown',                 // Deep Orange
+      'ff43a047': 'Implant',               // Dark Green
     };
-    return colorMap[hexColor.toLowerCase()] ?? 'unknown';
+    return colorMap[hexColor.toLowerCase()] ?? 'Unknown';
   }
 
   Color _parseColor(String color) {
